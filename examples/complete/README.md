@@ -79,8 +79,10 @@ module "sentinel_data_connector" {
 
   workspace_id = module.sentinel.onboarding_id
 
-  data_connectors = merge(
-    {
+  # The gated groups ride through concat + merge instead of ternaries: conditional branches must
+  # unify types, and these maps are deliberately heterogeneous.
+  data_connectors = merge(concat(
+    [{
       # Azure and Entra: tenant/subscription scoped, no service license needed to connect.
       "entra-id"                 = { kind = "azure_active_directory" }
       "defender-for-cloud"       = { kind = "azure_security_center" }
@@ -102,17 +104,17 @@ module "sentinel_data_connector" {
         kind                                         = "microsoft_threat_intelligence"
         microsoft_emerging_threat_feed_lookback_date = "2026-01-01T00:00:00Z"
       }
-    },
+    }],
 
     # License-gated (401 InvalidLicense without Defender for Endpoint / Microsoft 365 Defender).
-    var.enable_licensed_connectors ? {
+    [for m in [{
       "defender-endpoint" = { kind = "microsoft_defender_advanced_threat_protection" }
       "defender-xdr"      = { kind = "microsoft_threat_protection" }
-    } : {},
+    }] : m if var.enable_licensed_connectors],
 
     # External dependencies: Azure validates the AWS role (workspace id as external id) against a
     # real AWS account, and the TAXII server must answer.
-    var.enable_external_connectors ? {
+    [for m in [{
       "aws-cloudtrail" = { kind = "aws_cloud_trail", aws_role_arn = var.aws_cloudtrail_role_arn }
       "aws-s3-flowlogs" = {
         kind              = "aws_s3"
@@ -128,10 +130,10 @@ module "sentinel_data_connector" {
         user_name         = "feeduser"
         polling_frequency = "OnceADay"
       }
-    } : {},
-  )
+    }] : m if var.enable_external_connectors],
+  )...)
 
-  taxii_passwords = var.enable_external_connectors ? { "ti-taxii-feed" = var.taxii_password } : {}
+  taxii_passwords = merge([for m in [{ "ti-taxii-feed" = var.taxii_password }] : m if var.enable_external_connectors]...)
 }
 ```
 

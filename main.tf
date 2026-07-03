@@ -174,3 +174,30 @@ resource "azurerm_sentinel_data_connector_threat_intelligence_taxii" "this" {
   polling_frequency = each.value.polling_frequency
   lookback_date     = each.value.lookback_date
 }
+
+# The flat map the outputs expose, built here rather than in outputs.tf: the docs tooling rewrites
+# outputs.tf and keeps only output blocks, so a locals block there does not survive.
+locals {
+  connector_objects = merge([
+    for kind, resources in {
+      aws_cloud_trail                               = azurerm_sentinel_data_connector_aws_cloud_trail.this
+      aws_s3                                        = azurerm_sentinel_data_connector_aws_s3.this
+      azure_active_directory                        = azurerm_sentinel_data_connector_azure_active_directory.this
+      azure_advanced_threat_protection              = azurerm_sentinel_data_connector_azure_advanced_threat_protection.this
+      azure_security_center                         = azurerm_sentinel_data_connector_azure_security_center.this
+      dynamics_365                                  = azurerm_sentinel_data_connector_dynamics_365.this
+      iot                                           = azurerm_sentinel_data_connector_iot.this
+      microsoft_cloud_app_security                  = azurerm_sentinel_data_connector_microsoft_cloud_app_security.this
+      microsoft_defender_advanced_threat_protection = azurerm_sentinel_data_connector_microsoft_defender_advanced_threat_protection.this
+      microsoft_threat_intelligence                 = azurerm_sentinel_data_connector_microsoft_threat_intelligence.this
+      microsoft_threat_protection                   = azurerm_sentinel_data_connector_microsoft_threat_protection.this
+      office_365                                    = azurerm_sentinel_data_connector_office_365.this
+      office_365_project                            = azurerm_sentinel_data_connector_office_365_project.this
+      office_atp                                    = azurerm_sentinel_data_connector_office_atp.this
+      office_irm                                    = azurerm_sentinel_data_connector_office_irm.this
+      office_power_bi                               = azurerm_sentinel_data_connector_office_power_bi.this
+      threat_intelligence                           = azurerm_sentinel_data_connector_threat_intelligence.this
+      threat_intelligence_taxii                     = azurerm_sentinel_data_connector_threat_intelligence_taxii.this
+    } : { for k, r in resources : k => { id = r.id, kind = kind, name = r.name } }
+  ]...)
+}
