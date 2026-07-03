@@ -36,20 +36,8 @@ variable "enable_external_connectors" {
   default     = false
 }
 
-variable "enable_fusion_rule" {
-  description = "Manage the Fusion rule. Off by default: Sentinel pre-enables BuiltInFusion on every new workspace, so a net-new create conflicts (import it instead on real workspaces)."
-  type        = bool
-  default     = false
-}
-
 variable "enable_licensed_connectors" {
   description = "Create the Defender for Endpoint and Defender XDR connectors. Off by default: they fail with 401 InvalidLicense on tenants without those licenses."
-  type        = bool
-  default     = false
-}
-
-variable "enable_mlba_rule" {
-  description = "Create the MLBA rule. Off by default: MLBA templates only exist in workspaces already fed by the matching connector."
   type        = bool
   default     = false
 }
@@ -58,12 +46,6 @@ variable "loc" {
   description = "Outfix: short Azure region code used in resource names (for example uks)."
   type        = string
   default     = "uks"
-}
-
-variable "mlba_template_guid" {
-  description = "The MLBA alert rule template GUID to enable when enable_mlba_rule is true (read it from your workspace's alert rule templates)."
-  type        = string
-  default     = "fa118b98-de46-4e94-87f9-8e6d5060b60b"
 }
 
 variable "regions" {
