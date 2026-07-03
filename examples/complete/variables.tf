@@ -42,6 +42,12 @@ variable "enable_licensed_connectors" {
   default     = false
 }
 
+variable "enable_tenant_scoped_connectors" {
+  description = "Create the tenant-scoped connectors (Entra ID, Defender for Identity, Defender for Cloud Apps, Dynamics 365, the Office family, TI platforms). Off by default: the service returns 401 Access denied unless the caller holds tenant security-admin rights, which CI service principals usually do not."
+  type        = bool
+  default     = false
+}
+
 variable "loc" {
   description = "Outfix: short Azure region code used in resource names (for example uks)."
   type        = string

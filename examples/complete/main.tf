@@ -55,28 +55,32 @@ module "sentinel_data_connector" {
   # unify types, and these maps are deliberately heterogeneous.
   data_connectors = merge(concat(
     [{
-      # Azure and Entra: tenant/subscription scoped, no service license needed to connect.
-      "entra-id"                 = { kind = "azure_active_directory" }
-      "defender-for-cloud"       = { kind = "azure_security_center" }
-      "defender-identity-legacy" = { kind = "azure_advanced_threat_protection" }
-      "defender-iot"             = { kind = "iot" }
-
-      # Microsoft 365 family: service toggles exercised on office_365.
-      "office"          = { kind = "office_365", exchange_enabled = true, sharepoint_enabled = true, teams_enabled = true }
-      "office-project"  = { kind = "office_365_project" }
-      "office-defender" = { kind = "office_atp" }
-      "office-irm"      = { kind = "office_irm" }
-      "office-powerbi"  = { kind = "office_power_bi" }
-      "dynamics"        = { kind = "dynamics_365" }
-      "defender-apps"   = { kind = "microsoft_cloud_app_security", alerts_enabled = true, discovery_logs_enabled = false }
-
-      # Threat intelligence: the TI platforms feed and the Microsoft emerging threat feed.
-      "ti-platforms" = { kind = "threat_intelligence", lookback_date = "2026-01-01T00:00:00Z" }
+      # Subscription-scoped connectors plus the Microsoft emerging threat feed: creatable by an
+      # ordinary service principal with workspace rights (verified empirically), so these run live
+      # in CI.
+      "defender-for-cloud" = { kind = "azure_security_center" }
+      "defender-iot"       = { kind = "iot" }
       "msft-threat-intel" = {
         kind                                         = "microsoft_threat_intelligence"
         microsoft_emerging_threat_feed_lookback_date = "2026-01-01T00:00:00Z"
       }
     }],
+
+    # Tenant-scoped connectors: the service returns 401 Access denied unless the CALLER holds
+    # tenant security-admin rights (a human security admin works; a plain CI service principal
+    # does not). Enable when applying as a sufficiently privileged identity.
+    [for m in [{
+      "entra-id"                 = { kind = "azure_active_directory" }
+      "defender-identity-legacy" = { kind = "azure_advanced_threat_protection" }
+      "defender-apps"            = { kind = "microsoft_cloud_app_security", alerts_enabled = true, discovery_logs_enabled = false }
+      "dynamics"                 = { kind = "dynamics_365" }
+      "office"                   = { kind = "office_365", exchange_enabled = true, sharepoint_enabled = true, teams_enabled = true }
+      "office-project"           = { kind = "office_365_project" }
+      "office-defender"          = { kind = "office_atp" }
+      "office-irm"               = { kind = "office_irm" }
+      "office-powerbi"           = { kind = "office_power_bi" }
+      "ti-platforms"             = { kind = "threat_intelligence", lookback_date = "2026-01-01T00:00:00Z" }
+    }] : m if var.enable_tenant_scoped_connectors],
 
     # License-gated (401 InvalidLicense without Defender for Endpoint / Microsoft 365 Defender).
     [for m in [{

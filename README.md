@@ -40,11 +40,14 @@ a `kind` discriminator:
 - **Secrets stay out of the definitions.** The TAXII password rides in a separate sensitive map
   keyed by connector name, so the connector map itself stays printable; a check flags a user name
   without a password entry (and the reverse).
-- **Licensing is documented, not discovered.** Creation is validated by Azure against tenant
-  licensing: on an unlicensed tenant `microsoft_defender_advanced_threat_protection` and
-  `microsoft_threat_protection` fail with 401 InvalidLicense (verified empirically); the other
-  Microsoft connectors create without the backing service. The complete example gates those two
-  (and the external-dependency AWS/TAXII connectors) behind flags.
+- **Licensing and permissions are documented, not discovered.** All verified empirically: the
+  subscription-scoped connectors (Defender for Cloud, Defender for IoT) and the Microsoft
+  emerging threat feed create with ordinary workspace rights; the tenant-scoped connectors
+  (Entra ID, the Office family, Dynamics, Defender for Identity and Cloud Apps, TI platforms)
+  return 401 Access denied unless the caller holds tenant security-admin rights; and
+  `microsoft_defender_advanced_threat_protection` plus `microsoft_threat_protection` fail with
+  401 InvalidLicense on unlicensed tenants. The complete example runs the first group live and
+  gates the rest behind documented flags.
 - **Explicit onboarding dependency.** `workspace_id` accepts the sentinel module's
   `onboarding_id` (or a plain workspace id) and parses the workspace id back out of it.
 
@@ -88,8 +91,8 @@ module "sentinel_data_connector" {
 
 - [`examples/minimal`](./examples/minimal) - one subscription-scoped connector on a freshly
   onboarded workspace.
-- [`examples/complete`](./examples/complete) - the thirteen license-free Microsoft connectors live,
-  with the license-gated and external-dependency connectors present behind flags.
+- [`examples/complete`](./examples/complete) - the service-principal-creatable connectors live,
+  with the tenant-scoped, license-gated, and external-dependency connectors behind flags.
 
 ## Developing
 
